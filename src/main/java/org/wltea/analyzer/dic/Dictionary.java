@@ -30,13 +30,6 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.util.HashMap;
-import java.util.Map;
-//import java.util.concurrent.Executors;
-//import java.util.concurrent.ScheduledExecutorService;
-//import java.util.concurrent.TimeUnit;
-
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.wltea.analyzer.cfg.Configuration;
@@ -47,7 +40,6 @@ import org.wltea.analyzer.cfg.Configuration;
 public class Dictionary {
 
 
-    private final static Map<String, Timestamp> dictsLastLoad = new HashMap<String, Timestamp>(); 
 	/*
 	 * 词典单子实例
 	 */
@@ -71,7 +63,6 @@ public class Dictionary {
 	 */
 	private Configuration configuration;
     public static ESLogger logger = Loggers.getLogger("ik-analyzer");
-//    private static ScheduledExecutorService pool = Executors.newScheduledThreadPool(1);
     
     public static final String DIC_MAIN = "dic_main";
     public static final String DIC_SURNAME = "dic_surname";
@@ -95,13 +86,6 @@ public class Dictionary {
 					singleton = new Dictionary();
                     singleton.configuration=cfg;
                     singleton.loadDicts();
-//                    pool.scheduleWithFixedDelay(new Runnable() {
-//                        
-//                        @Override
-//                        public void run() {
-//                            singleton.loadMain();
-//                        }
-//                    }, 60, 60, TimeUnit.SECONDS);
 	                return singleton;
 				}
 			}
@@ -119,15 +103,8 @@ public class Dictionary {
     }
 
     private void loadDict(String tableName, DictSegment dictSegment) {
-        Timestamp loadStart = new Timestamp(System.currentTimeMillis());
-	    Timestamp lastLoad = dictsLastLoad.get(tableName);
-	    boolean firstLoad = false;
-	    if (lastLoad == null) {
-	        lastLoad = new Timestamp(0);
-	        firstLoad = true;
-	    }
 	    if (logger.isDebugEnabled()) {
-	        logger.debug("Loading dict " + tableName + " since " + lastLoad);
+	        logger.debug("Loading dict " + tableName);
 	    }
 	    Connection connection = null;
 	    PreparedStatement statement = null;
@@ -138,18 +115,12 @@ public class Dictionary {
                     this.configuration.getDatabaseUsername(),
                     this.configuration.getDatabaseUserpass());
             
-            String sql = String.format("select word, ts from %s where ts>=? order by ts", tableName);
+            String sql = String.format("select word, ts from %s", tableName);
             statement = connection.prepareStatement(sql);
-            statement.setTimestamp(1, lastLoad);
             resultSet = statement.executeQuery();
             while (resultSet.next()) {
-                if (logger.isInfoEnabled() && !firstLoad) {
-                    logger.info("Add word " + resultSet.getString("word"));
-                }
                 dictSegment.fillSegment(resultSet.getString("word").toCharArray());
-                lastLoad = resultSet.getTimestamp("ts");
             }
-            dictsLastLoad.put(tableName, loadStart);
         } catch (Exception e) {
             logger.error("ik-analyzer",e);
         } finally {
@@ -174,7 +145,6 @@ public class Dictionary {
             if (logger.isDebugEnabled()) {
                 logger.debug("Dicts loaded.");
             }
-            firstLoad = false;      
         }
 	}
 	
