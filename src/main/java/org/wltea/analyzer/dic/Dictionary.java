@@ -33,9 +33,9 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+//import java.util.concurrent.Executors;
+//import java.util.concurrent.ScheduledExecutorService;
+//import java.util.concurrent.TimeUnit;
 
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
@@ -71,7 +71,7 @@ public class Dictionary {
 	 */
 	private Configuration configuration;
     public static ESLogger logger = Loggers.getLogger("ik-analyzer");
-    private static ScheduledExecutorService pool = Executors.newScheduledThreadPool(1);
+//    private static ScheduledExecutorService pool = Executors.newScheduledThreadPool(1);
     
     public static final String DIC_MAIN = "dic_main";
     public static final String DIC_SURNAME = "dic_surname";
@@ -85,7 +85,7 @@ public class Dictionary {
     }
     
     public void relaod() {
-        this.loadMain();
+        this.loadDicts();
     }
 
 	public static synchronized Dictionary initial(Configuration cfg){
@@ -95,22 +95,18 @@ public class Dictionary {
 					singleton = new Dictionary();
                     singleton.configuration=cfg;
                     singleton.loadDicts();
-                    pool.scheduleWithFixedDelay(new Runnable() {
-                        
-                        @Override
-                        public void run() {
-                            singleton.loadMain();
-                        }
-                    }, 60, 60, TimeUnit.SECONDS);
+//                    pool.scheduleWithFixedDelay(new Runnable() {
+//                        
+//                        @Override
+//                        public void run() {
+//                            singleton.loadMain();
+//                        }
+//                    }, 60, 60, TimeUnit.SECONDS);
 	                return singleton;
 				}
 			}
 		}
 		return singleton;
-	}
-	
-	private void loadMain() {
-	    this.loadDict(DIC_MAIN, _MainDict);
 	}
 	
 	private void loadDicts() {
