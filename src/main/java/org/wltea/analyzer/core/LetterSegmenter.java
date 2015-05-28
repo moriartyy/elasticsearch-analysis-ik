@@ -280,8 +280,9 @@ class LetterSegmenter implements ISegmenter {
 	 * @return
 	 */
 	private boolean isLetterConnector(char input){
-		int index = Arrays.binarySearch(Letter_Connector, input);
-		return index >= 0;
+//		int index = Arrays.binarySearch(Letter_Connector, input);
+//		return index >= 0;
+		return false;
 	}
 	
 	/**

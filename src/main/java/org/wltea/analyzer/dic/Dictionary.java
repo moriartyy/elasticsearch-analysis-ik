@@ -94,18 +94,21 @@ public class Dictionary {
 	}
 	
 	private void loadDicts() {
-        this.loadDict(DIC_MAIN, _MainDict);
-        this.loadDict(DIC_SURNAME, _SurnameDict);
-        this.loadDict(DIC_QUANTIFIER, _QuantifierDict);
-        this.loadDict(DIC_SUFFIX, _SuffixDict);
-        this.loadDict(DIC_PREP, _PrepDict);
-        this.loadDict(DIC_STOP, _StopWords);        
+		DictSegment mainDict = new DictSegment((char)0);
+		mainDict = loadDict(DIC_MAIN);
+        _MainDict = loadEntity(mainDict);
+        _SurnameDict = loadDict(DIC_SURNAME);
+        _QuantifierDict = loadDict(DIC_QUANTIFIER);
+        _SuffixDict = loadDict(DIC_SUFFIX);
+        _PrepDict = loadDict(DIC_PREP);
+        _StopWords = loadDict(DIC_STOP);        
     }
 
-    private void loadDict(String tableName, DictSegment dictSegment) {
-	    if (logger.isDebugEnabled()) {
-	        logger.debug("Loading dict " + tableName);
+    private DictSegment loadEntity(DictSegment dictSegment) {
+	    if (logger.isInfoEnabled()) {
+	        logger.info("Loading entity");
 	    }
+	    
 	    Connection connection = null;
 	    PreparedStatement statement = null;
 	    ResultSet resultSet = null;
@@ -115,12 +118,17 @@ public class Dictionary {
                     this.configuration.getDatabaseUsername(),
                     this.configuration.getDatabaseUserpass());
             
-            String sql = String.format("select word, ts from %s", tableName);
+            String sql = String.format("select entity_words from dic_entities");
             statement = connection.prepareStatement(sql);
             resultSet = statement.executeQuery();
             while (resultSet.next()) {
-                dictSegment.fillSegment(resultSet.getString("word").toCharArray());
+            	String wordList = resultSet.getString("entity_words");
+            	String[] words = wordList.split(",");
+            	for (String word : words) {
+            		dictSegment.fillSegment(word.toCharArray());
+				}
             }
+
         } catch (Exception e) {
             logger.error("ik-analyzer",e);
         } finally {
@@ -142,10 +150,62 @@ public class Dictionary {
                 } catch (SQLException e) {
                 }
             }
-            if (logger.isDebugEnabled()) {
-                logger.debug("Dicts loaded.");
+            if (logger.isInfoEnabled()) {
+                logger.info("Dicts loaded.");
             }
         }
+        return dictSegment;
+	}
+
+	private DictSegment loadDict(String tableName) {
+	    if (logger.isInfoEnabled()) {
+	        logger.info("Loading dict " + tableName);
+	    }
+	    
+	    DictSegment dictSegment = new DictSegment((char)0);
+	    
+	    Connection connection = null;
+	    PreparedStatement statement = null;
+	    ResultSet resultSet = null;
+	    try {
+            connection = DriverManager.getConnection(
+                    this.configuration.getDatabaseConnectionUrl(),
+                    this.configuration.getDatabaseUsername(),
+                    this.configuration.getDatabaseUserpass());
+            
+            String sql = String.format("select word, ts from %s", tableName);
+            statement = connection.prepareStatement(sql);
+            resultSet = statement.executeQuery();
+            while (resultSet.next()) {
+                dictSegment.fillSegment(resultSet.getString("word").toCharArray());
+            }
+
+        } catch (Exception e) {
+            logger.error("ik-analyzer",e);
+        } finally {
+            if (resultSet != null) {
+                try {
+                    resultSet.close();
+                } catch (SQLException e) {
+                }
+            }
+            if (statement != null) {
+                try {
+                    statement.close();
+                } catch (SQLException e) {
+                }
+            }
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                }
+            }
+            if (logger.isInfoEnabled()) {
+                logger.info("Dicts loaded.");
+            }
+        }
+        return dictSegment;
 	}
 	
 	/**
